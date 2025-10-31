@@ -1,7 +1,7 @@
 package com.example.flightapp.dao;
 
 import com.example.flightapp.model.Flight;
-import javaika.util.ArrayList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
