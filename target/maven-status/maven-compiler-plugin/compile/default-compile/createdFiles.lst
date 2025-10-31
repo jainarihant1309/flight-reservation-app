@@ -1,3 +1,4 @@
+com/example/flightapp/controller/DBSetupServlet.class
 com/example/flightapp/dao/FlightDAO.class
 com/example/flightapp/controller/FlightSearchServlet.class
 com/example/flightapp/model/Flight.class
