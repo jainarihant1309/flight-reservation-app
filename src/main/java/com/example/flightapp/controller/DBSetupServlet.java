@@ -1,26 +1,30 @@
 package com.example.flightapp.controller;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 
-@WebServlet("/setup-db") // Is URL se hum ise call karenge
-public class DBSetupServlet extends HttpServlet {
-    // -- Aapki Details Yahan Update Kar Di Gayi Hain --
-    private static final String DB_ENDPOINT = "flight-app-db.cs5qmk20oxmv.us-east-1.rds.amazonaws.com";
-    private static final String DB_NAME = "flightdb";
-    private static final String DB_USER = "admin";
-    private static final String DB_PASSWORD = "Arihant!12_";
-    // --------------------------------------------------
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-    private String getConnectionString() {
+@WebServlet("/setup-db")
+public class DBSetupServlet extends HttpServlet {
+    private static final String DB_ENDPOINT = "flight-app-db.cs5qmk20oxmv.us-east-1.rds.amazonaws.com";
+    private static final String DB_NAME = "flightdb"; // Hum is naam se database banayenge
+    private static final String DB_USER = "admin";
+    private static final String DB_PASSWORD = "Arihant!123";
+
+    // --- FIX: Connection string se DB name hata diya ---
+    private String getBaseConnectionString() {
+        return "jdbc:mysql://" + DB_ENDPOINT + ":3306";
+    }
+
+    private String getFullConnectionString() {
         return "jdbc:mysql://" + DB_ENDPOINT + ":3306/" + DB_NAME;
     }
 
@@ -36,6 +40,9 @@ public class DBSetupServlet extends HttpServlet {
             return;
         }
 
+        // --- FIX: Naye SQL commands add kiye ---
+        String createDatabaseSQL = "CREATE DATABASE IF NOT EXISTS " + DB_NAME + ";";
+        
         String createTableSQL = "CREATE TABLE IF NOT EXISTS flights (" +
                                 "id INT AUTO_INCREMENT PRIMARY KEY," +
                                 "flight_number VARCHAR(10) NOT NULL," +
@@ -48,11 +55,24 @@ public class DBSetupServlet extends HttpServlet {
         String insertDataSQL = "INSERT INTO flights (flight_number, origin, destination, departure_time, price) VALUES " +
                                "('AI202', 'Delhi', 'Mumbai', '08:00 AM', 7500.00)," +
                                "('6E555', 'Delhi', 'Mumbai', '09:30 AM', 7200.00)," +
-                               "('UK810', 'Mumbai', 'Delhi', '11:00 AM', 7800.00)," +
-                               "('AI505', 'Bengaluru', 'Delhi', '07:00 AM', 8500.00)," +
-                               "('SG805', 'Delhi', 'Bengaluru', '01:00 PM', 8200.00);";
+                               "('UK810', 'Mumbai', 'Delhi', '11:00 AM', 7800.00);";
 
-        try (Connection conn = DriverManager.getConnection(getConnectionString(), DB_USER, DB_PASSWORD);
+        // Pehle server se connect karke database banayenge
+        try (Connection conn = DriverManager.getConnection(getBaseConnectionString(), DB_USER, DB_PASSWORD);
+             Statement stmt = conn.createStatement()) {
+            
+            out.println("Executing CREATE DATABASE...");
+            stmt.execute(createDatabaseSQL);
+            out.println("Database '" + DB_NAME + "' created or already exists.");
+
+        } catch (Exception e) {
+            out.println("Error creating database!");
+            e.printStackTrace(out);
+            return; // Agar database nahi bana to aage nahi badhna
+        }
+
+        // Ab database se connect karke table banayenge
+        try (Connection conn = DriverManager.getConnection(getFullConnectionString(), DB_USER, DB_PASSWORD);
              Statement stmt = conn.createStatement()) {
             
             stmt.execute("DROP TABLE IF EXISTS flights;");
@@ -67,6 +87,7 @@ public class DBSetupServlet extends HttpServlet {
             out.println("\nDATABASE SETUP COMPLETE!");
 
         } catch (Exception e) {
+            out.println("Error creating table or inserting data!");
             e.printStackTrace(out);
         }
     }
